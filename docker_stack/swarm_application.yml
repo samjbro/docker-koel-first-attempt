@@ -1,0 +1,51 @@
+version: '3'
+services:
+  local-database:
+    image: samjbro/koel_local_database
+    networks:
+      - koel_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - koel_database
+
+  application-server:
+    image: samjbro/koel_application_server
+    networks:
+      - koel_network
+    depends_on:
+      - local-database
+    environment:
+      - DB_HOST=local-database
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    environment:
+      - HOST=application-server
+      - PORT=8000
+    volumes:
+      - ../application_server:/usr/local/share/koel
+
+  web-server:
+    image: samjbro/koel_web_server
+    networks:
+      - koel_network
+    ports:
+      - 8080:8080
+    depends_on:
+      - application-server
+    environment:
+      - APP_NAME=application-server
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+
+networks:
+  koel_network:
+
+volumes:
+  koel_database:
